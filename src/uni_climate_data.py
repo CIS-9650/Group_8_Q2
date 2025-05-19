@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 
 url_list = {
-     'uni':['https://www.topuniversities.com/world-university-rankings/2024']
+     'uni':['https://www.topuniversities.com/where-to-study/north-america/united-states/ranked-top-100-us-universities#page-1']
 }
 
 def get_university_data(url_list):
