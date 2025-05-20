@@ -185,3 +185,18 @@ final_project_table = pd.merge(df,final_climate_table, left_index=True, right_in
 final_project_table = final_project_table.drop(columns=['Country'])
 
 display (final_project_table)
+
+#final df descriptive statistics
+
+print(final_project_table.describe())
+
+#export final df to csv file
+
+final_project_table.to_csv("final_project_table.csv", index=False)
+
+
+#final_project_table to sql
+
+conn = sqlite3.connect("university_climate.db")
+cursor = conn.cursor()
+final_project_table.to_sql("universitydata", conn, if_exists="replace", index=False)
