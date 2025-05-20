@@ -42,8 +42,8 @@ def get_university_data(url_list):
 # half of this code.
 
 universities, countries = get_university_data(url_list['uni'])
-countries = countries[0:5]
-universities = universities[0:5]
+countries = countries[0:30]
+universities = universities[0:30]
 
 data = {
     'University': universities,
