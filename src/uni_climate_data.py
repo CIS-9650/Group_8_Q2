@@ -1,5 +1,4 @@
-# Code for scraping the top US colleges.
-
+# Code for scraping the top US colleges and their historical climate data.
 
 import requests
 from bs4 import BeautifulSoup
@@ -37,26 +36,32 @@ def get_university_data(url_list):
 
     return universities, countries
 
-# Limit the number of universities in our final table and create the data frame
-# that will be merged with climate data frames when they are created in the 2nd
-# half of this code.
+# Used only a slice of the scraped list to limit the number of universities in our 
+# final table. The API has tight daily call limits for historical data that became
+# apparent only after the small testing of the code was completed. Once run at full 
+# scale with 30 items in the table, the daily limit issue was raised. At most we 
+# could make sufficient calls to the API to cover 25 items, and we covered 24 to ensure 
+# that the code would run successfully. It appears that weatherbit.io prefers to sell
+# its historical data through bulk orders of data sets rather than through free API 
+# calls. The API key here was also part of a free trial that expires on 06-12-2025
 
-universities, countries = get_university_data(url_list['uni'])
-countries = countries[0:30]
-universities = universities[0:30]
+universities, cities = get_university_data(url_list['uni'])
+cities = cities[0:20]
+universities = universities[0:20]
 
 data = {
     'University': universities,
-    'Country': countries    # this name is a relic. it is actually a list of cities
+    'Country': cities    
     }
 
-df = pd.DataFrame(data)
+df = pd.DataFrame(data)  # this is the data upon which the APi calls will be based
+
 #display (df)
 
-
-# *** End of first block of code that scrapes ***
-# *** Start of the historical climate data API call ***
-
+# *****************************************************
+# **  End of first block of code that scrapes        **
+# **  Start of the historical climate data API call  **
+# *****************************************************
 
 # The code below makes an API request to www.weatherbit.io to retreive historical
 # climate data for unique locations. The data being queried here is based on average
@@ -68,28 +73,18 @@ df = pd.DataFrame(data)
 # Spring = April-June). The script also returns the total precipitation and snowfall
 # for the entire school year.
 
-# getInfo is the function call that returns the historical climate data for a
-# particular location in latitude and longitude.
 
-  # Currently this is a static set of json data similar to what the API would return.
-  # In order to avoid network issues and problems with API rate limiting, this code
-  # employs this sample data rather than real return data. As a result, all the cities
-  # in the list from the scrape will share the exact same data. Ignore this for now,
-  # since this data will be sufficient for testing any code built on this one.
-  # We can replace this with the lines of code for the API call, when the final
-  # python file is running fully.
-
-  # The actual API-call code is below this test function (and commented out).
+# getInfo is the function call that returns the historical climate data for each 
+# location based on latitude and longitude.
 
 def getInfo(lat,lon):
-  url = f'https://api.weatherbit.io/v2.0/normals?lat={lat}&lon={lon}&start_day=01-01&end_day=12-31&units=I&tp=monthly&key=ff690c5a1b744d609b637aa8f66e6114'
+  url = f'https://api.weatherbit.io/v2.0/normals?lat={lat}&lon={lon}&start_day=01-30&end_day=12-01&units=I&tp=monthly&key=ac80176089ef4527834d26321b2c7657'
   response = requests.get(url)
   if response.status_code == 200:
     data = response.json()
     return data
   else:
     print (f'the request failed (error {response.status_code})')
-
 
 # Since the API will only return historical climate data based on the latitude
 # and longitude of one of our cities in the list, latlong is the function call
@@ -103,6 +98,20 @@ def latlong(city):
   loc = str(lat), str(lon)
   return (loc)
 
+# get_climate_data is a loop of API calls that constructs a list of climate data 
+# sets for every city. Rate limits in the API require this efficiency. 
+# By doing this, for each season we no longer need to query the API again. 
+# Since the underlying data is pulled for the year, it can yield season data 
+# without additional API calls
+
+def get_climate_data():
+  all_climates = []
+  for city in cities:
+    location = latlong(f'{city},USA') # USA added to each city to ensure correct geolocation
+    time.sleep (5)  # a little delay to avoid making too many requests per second
+    weather = getInfo(location[0],location[1])  # the raw json data
+    all_climates.append(weather)
+  return all_climates
 
 # get_season is the funtion that processes the raw historical climate data
 # for the final table of data.
@@ -111,13 +120,10 @@ def get_season(season):
   temp_list=[]    #lists where month-on-month weather point data are assembled
   rain_list=[]
   snow_list=[]
-
-  for city in countries:
-    location = latlong(f'{city},USA') # USA added to each city to ensure correct geolocation
-    time.sleep (2)  # a little delay to avoid making too many requests per second
-    weather = getInfo(location[0],location[1])  # the raw json data
-    year = (weather["data"])  # the relevant json data returned by the API
-
+  count = 0
+  for city in cities:
+    year = (all_climates[count]["data"])  # the relevant json data returned by the API
+    count += 1
     total_temp = 0
     total_snow = 0
     total_rain = 0
@@ -133,17 +139,19 @@ def get_season(season):
     temp_list.append (avg_temp)
     snow_list.append (total_snow)  # collecting total rain and snow per trimester
     rain_list.append (total_rain)  # trimester data summed in the dataframe to reduce API calls
-
+    
   dict = {      # dictionary of lists to build the dataframe for each trimester
-    'City':countries,
+    'City':cities,
     'Avg Temp':temp_list,
     'Total Rain':rain_list,
     'Total Snow':snow_list
-        }
+      }
   return dict
 
 
 #  * Working part of API-call code *
+
+all_climates = get_climate_data()
 
 tri_one = get_season([9,10,11,12])  # pulls climate data for sep (9) - dec (12)
 df1 = pd.DataFrame(tri_one)
@@ -155,6 +163,7 @@ df2=df2.drop(columns=['City'])      # merged data frames on index instead of cit
 tri_three = get_season([4,5,6])     # multiplication of items during the data frame
 df3 = pd.DataFrame(tri_three)       # merges below
 df3=df3.drop(columns=['City'])
+
 
 print('School Year Historical Climate Data by Trimester')
 print('------------------------------------------------')
