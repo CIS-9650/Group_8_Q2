@@ -255,7 +255,7 @@ def getInfo(lat,lon):
 # out of API requests.
 
 #def getInfo(lat,lon):
-#  url = f'https://api.weatherbit.io/v2.0/normals?lat={lat}&lon={lon}&start_day=01-01&end_day=12-31&units=I&tp=monthly&key=ff690c5a1b744d609b637aa8f66e6114'
+#  url = f'https://api.weatherbit.io/v2.0/normals?lat={lat}&lon={lon}&start_day=01-01&end_day=12-31&units=I&tp=monthly&key=API_KEY'
 #  response = requests.get(url)
 #  if response.status_code == 200:
 #    data = response.json()
