@@ -78,7 +78,7 @@ df = pd.DataFrame(data)  # this is the data upon which the APi calls will be bas
 # location based on latitude and longitude.
 
 def getInfo(lat,lon):
-  url = f'https://api.weatherbit.io/v2.0/normals?lat={lat}&lon={lon}&start_day=01-30&end_day=12-01&units=I&tp=monthly&key=ac80176089ef4527834d26321b2c7657'
+  url = f'https://api.weatherbit.io/v2.0/normals?lat={lat}&lon={lon}&start_day=01-30&end_day=12-01&units=I&tp=monthly&key=API_KEY'
   response = requests.get(url)
   if response.status_code == 200:
     data = response.json()
